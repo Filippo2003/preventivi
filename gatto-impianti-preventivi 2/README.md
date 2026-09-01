@@ -4,7 +4,7 @@ App mobile-first per creare preventivi digitali, gemella dell'app Rapportino. Co
 
 ---
 
-## 1. Struttura del progetto
+## 1. Struttura del progetto 
 
 ```
 gatto-impianti-preventivi/
