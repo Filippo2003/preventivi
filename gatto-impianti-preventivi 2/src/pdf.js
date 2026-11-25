@@ -111,6 +111,9 @@ export async function generatePreventivoPDF({
     y += descrizioneLines.length * 4.8;
   }
 
+  // Il footer inizia a 270 mm (linea grigia): il contenuto non deve superare CONTENT_BOTTOM.
+  const CONTENT_BOTTOM = 264;
+
   // ---- Tabella voci ----
   y += 10;
   const colDescX = marginX;
@@ -156,7 +159,7 @@ export async function generatePreventivoPDF({
       const descLines = doc.splitTextToSize(r.description || "-", 78);
       const rowHeight = Math.max(descLines.length * 4.6, 6);
 
-      if (y + rowHeight > 265) {
+      if (y + rowHeight > CONTENT_BOTTOM) {
         doc.addPage();
         y = 25;
         drawTableHeader();
@@ -178,7 +181,8 @@ export async function generatePreventivoPDF({
   }
 
   // ---- Totali ----
-  if (y > 250) {
+  const totaliAltezza = 6 + (scontoValore > 0 ? 6 : 0) + 6 + 3 + 6;
+  if (y + totaliAltezza > CONTENT_BOTTOM) {
     doc.addPage();
     y = 25;
   }
@@ -217,7 +221,10 @@ export async function generatePreventivoPDF({
   // ---- Note ----
   if (note && note.trim()) {
     y += 12;
-    if (y > 255) {
+    const noteLines = doc.splitTextToSize(note, pageWidth - marginX * 2);
+    const noteLineH = 4.2;
+    // Il titolo "Note:" non resta da solo in fondo alla pagina: servono almeno 2 righe sotto.
+    if (y + 5.5 + noteLineH * Math.min(2, noteLines.length) > CONTENT_BOTTOM) {
       doc.addPage();
       y = 25;
     }
@@ -225,7 +232,15 @@ export async function generatePreventivoPDF({
     doc.text("Note:", marginX, y);
     doc.setFont("helvetica", "normal");
     y += 5.5;
-    y = doc.text(doc.splitTextToSize(note, pageWidth - marginX * 2), marginX, y);
+    // Riga per riga: se si arriva al footer si continua sulla pagina successiva.
+    noteLines.forEach((line) => {
+      if (y > CONTENT_BOTTOM) {
+        doc.addPage();
+        y = 25;
+      }
+      doc.text(line, marginX, y);
+      y += noteLineH;
+    });
   }
 
   // ---- Footer (su ogni pagina) ----
